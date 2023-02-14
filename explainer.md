@@ -5,7 +5,7 @@
 
 
 ## Participate
-- https://github.com/riju/latencySensitiveWebWorker/issues/
+- https://github.com/riju/web-worker-quality-of-service/issues/
 
 
 ## Introduction
