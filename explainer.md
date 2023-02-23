@@ -79,8 +79,7 @@ We are intended to avoid introducing the platform thread priority hint as an alt
 - If we do so, whether we should or not, and how to define the priority for nesting workers would be a problem.
 
 ## Stakeholder Feedback / Opposition
-- Google: Positive
-- Zoom: Positive
+WIP
 
 ## References & acknowledgements
 Many thanks for valuable feedback and advice from:
