@@ -28,6 +28,15 @@ Multiple stakeholders confirmed they would like an option to offload some of the
 Experiments shows that utilizing efficient scheduling would have significant power saving on heavy-loaded background workers, including AI pre-processing in web real-time communication.
 
 ## API
+
+```idl
+partial dictionary WorkerOptions {
+  WorkerQualityOfService qualityOfService = "default";
+};
+
+enum WorkerQualityOfService { "high", "low", "default" };
+```
+
 When the user agent creates the corresponding native threads for the web workers, also set the quality of service or call related platform interface according to the hint given.
 The quality of service attribute of a worker will be decided by the parameter that construct the worker instance and is not affected by its parent worker if it has one.
 The quality of service attribute should not affect the worker's platform thread priority, to avoid priority inversion and other scheduling issues.
@@ -79,10 +88,13 @@ We are intended to avoid introducing the platform thread priority hint as an alt
 - If we do so, whether we should or not, and how to define the priority for nesting workers would be a problem.
 
 ## Stakeholder Feedback / Opposition
-WIP
+
+Bikeshedding : 
+```qualityOfService``` vs ```computePriority``` 
 
 ## References & acknowledgements
 Many thanks for valuable feedback and advice from:
 
 - [Rijubrata Bhaumik](https://github.com/riju)
 - [Jianlin Qiu](https://github.com/taste1981)
+- [François Beaufort] (https://github.com/beaufortfrancois)
