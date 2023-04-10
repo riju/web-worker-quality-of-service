@@ -75,6 +75,19 @@ Some work may be responsible of providing the user with a real-time result, wher
 
 ## Considered alternatives
 
+### [Worklet](https://html.spec.whatwg.org/multipage/worklets.html)
+According to the [HTML Living Standard](https://html.spec.whatwg.org/multipage/worklets.html):
+> The worklet infrastructure specified here cannot be used directly by web developers. Instead, other specifications build upon it to create directly-usable worklet types, specialized for running in particular parts of the browser implementation pipeline.
+
+> Worklets are similar to web workers. However, they:
+> - Are thread-agnostic. That is, they are not designed to run on a dedicated separate thread, like each worker is. Implementations can run worklets wherever they choose (including on the main thread). 
+
+Worklets are:
+1) for limited specific purpose (audio processing, css painting, animation, and layout), in which case web browsers can optimize the thread with sufficient informations and assumptions, and developers are not supposed to affect the procedure, and
+2) not binded to specific threads, which makes it hard to hint an uncertain and implementation-defined thread, or do the final decision using multiple hints.
+
+So we think Worklets should not have a quality of service hint and can be optimized with web browsers' effort.
+
 ### [Prioritized Task Scheduling](https://wicg.github.io/scheduling-apis/) for JS main thread
 [Prioritized Task Scheduling](https://wicg.github.io/scheduling-apis/) is a good way to yield to the browser and ensure the application's responsiveness. Our focus is to deal with the Web Workers that work on the background as a separate thread.
 
