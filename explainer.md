@@ -2,6 +2,7 @@
 
 ## Authors:
 - [Wang, Zhibo](https://github.com/zhibo1-wang)
+- [Rijubrata Bhaumik](https://github.com/riju)
 
 
 ## Participate
@@ -108,7 +109,6 @@ Bikeshedding :
 ## References & acknowledgements
 Many thanks for valuable feedback and advice from:
 
-- [Rijubrata Bhaumik](https://github.com/riju)
 - [Jianlin Qiu](https://github.com/taste1981)
 - [François Beaufort](https://github.com/beaufortfrancois)
 - [Youenn Fablet](https://github.com/youennf)
