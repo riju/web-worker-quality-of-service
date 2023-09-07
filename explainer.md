@@ -112,3 +112,4 @@ Many thanks for valuable feedback and advice from:
 - [Jianlin Qiu](https://github.com/taste1981)
 - [François Beaufort](https://github.com/beaufortfrancois)
 - [Youenn Fablet](https://github.com/youennf)
+- [Vaibhav Shankar](https://github.com/vaibhavk2)
