@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+ <head>
+  <meta charset=UTF-8>
+  <meta content="width=device-width" name="viewport">
+  <title>Web Worker Quality of Service</title>
+  <link rel="stylesheet" href="../Templates/slides.css">
+  <!-- To use the b6+ framework, include this: -->
+  <script src="../Templates/b6plus.js"></script>
+  <!-- To use the Shower framework, remove b6plus above and add these two: -->
+  <!--   <script src="../Templates/shower.js"></script>         -->
+  <!--   <script src="../Templates/iframe-fixup.js"></script>   -->
+  <style>
+    @media print { .clock { display: none; } }
+    @media print { .fullclock { display: none; } }
+  </style>
+ </head>
+ <body class="shower slide-up duration=15">
+  <!--=============================================================
+			    Example slides
+  ==============================================================-->
+
+  <!-- Remove this element if you don't want a progress bar: -->
+  <div class=progress></div>
+
+  <!-- Remove this element if you don't want the remaining time in
+       index mode and on the 2nd screen. If you keep it, you may want
+       to add the class "duration=n" on BODY, where n is the initial
+       number of minutes on the clock. Default is 30. -->
+  <!-- <div class=clock></div> -->
+
+  <!-- Alternative: Show also real time and elapsed time. -->
+  <div class=fullclock></div>
+
+  <!-- What a screen reader should say on leaving slide mode,
+       instead of the default ‘Stopped.’ -->
+  <div role=region aria-live=assertive>
+    Leaving presentation mode.
+  </div>
+
+  <section class="slide cover clear" id="start">
+   <h1>Web Worker<br>Quality of Service</h1>
+   <address>Rijubrata Bhaumik, Zhibo Wang [Intel]</address>
+   <p>★ W3C TPAC 2023, Seville, 13 September ★</p>
+  </section>
+
+  <section class="slide">
+    <img width=505 height=353 src="./ds19.png"
+    class="cover" style="object-position: 3.2em top">
+  </section>
+
+  <section class="comment">
+    Surma on the Chrome Dev Summit 2019 talk.
+  </section>
+
+  <section class="slide">
+    <h2>Web Workers</h2>
+    <ul>
+      <li>Offload work from the main thread
+        <ul>
+          <li>Ensure UI's responsiveness and smoothness</li>
+        </ul>
+      </li>
+      <li>Allows for laborious processing
+        <ul>
+          <li>Audio/video processing in real-time communication</li>
+          <li>Compressing or data processing</li>
+        </ul>
+      </li>
+      <li>Enables multi-threading
+        <ul>
+          <li>Ray tracing demo shows 3x power saving using 8 threads
+            <p class="note">
+              <a href="https://devblogs.microsoft.com/sustainable-software/green-energy-efficient-progressive-web-apps">
+                https://devblogs.microsoft.com/sustainable-software/green-energy-efficient-progressive-web-apps
+              </a>
+            </p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section class="comment">
+    In video conference, audio processing 
+    (noise suppression, echo cancellation) and video processing 
+    (background blur/replacement) is widely used. Zoom use a WASM 
+    backend for background blur. Google MediaPipe can also be run in 
+    web workers.
+  </section>
+
+  <section class="slide">
+    <img width=0 height=323 src="./workers_canI-use.png"
+    class="cover" style="object-position: 3.2em top">
+  </section>
+
+  <section class="comment">
+    Web workers has now been supported by all mainstream browsers.
+  </section>
+
+  <section class="slide">
+    <h2>Workloads characteristics</h2>
+    <ul>
+      <li>
+        Latency sensitive
+        <p>Some tasks need to be run with best performance to minimize latency</p>
+      </li>
+      <li>
+        Background tasks
+        <p>Can be scheduled at low performance to get power efficiency</p>
+      </li>
+      <li>
+        Expect to be prioritized
+        <p>Audio glitches may happen if it is blocked by rendering</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="comment">
+    Web workers are default to be normal thread priority, default 
+    thread quality of service. However, workloads have characteristics
+    and can be optimized for performance or efficiency, on modern CPUs.
+    In online conference audio glitches has a worse user experience than
+    video latency, so audio processing thread should be prioritized.
+  </section>
+
+  <section class="slide side right big">
+    <h2>Windows</h2>
+    <img class="side cover" style="object-fit: contain; object-position: right;"
+     src="./truncated_windows_QoS.png">
+    <p>SetThreadPriority()</p>
+    <!-- web workers live in threads, so process level api is irrelevant -->
+    <!-- <p>SetProcessInformation()</p> -->
+    <p>
+      SetThreadInformation()
+      <span class="note">(ThreadPowerThrottling verion)</p>
+    </p>
+    
+  </section>
+
+  <section class="comment">
+    Windows SetThreadInformation API allow us to set High/Eco QoS.
+    Other QoS level are decided by Windows according to the status of 
+    the UI window.
+  </section>
+
+  <section class="slide side right big">
+    <h2>MacOS</h2>
+    <img class="side cover" style="object-fit: contain; object-position: right;" 
+      src="./truncated_MacOS.png">
+    <p><code>pthread_attr_set_qos_class_np(3)</code></p>
+    <p class="note">_np = non-portable</p>
+    <h3>QoS Class</h3>
+    <ul>
+      <li>User-interactive</li>
+      <li>User-initiated</li>
+      <li>Utility</li>
+      <li>Background</li>
+    </ul>
+    <p class="note">
+      Apple's 
+      <a href="https://opensource.apple.com/source/libpthread/libpthread-416.60.2/pthread/qos.h.auto.html">
+        qos.h
+      </a>
+    </p>
+  </section>
+
+  <section class="comment">
+    MacOS use an universal management over priority, frequency control, 
+    and core selection, using its QoS API. Windows 
+    SetThreadInformation(ThreadPowerThrottling) mentioned before only do
+    the latter two.
+  </section>
+   
+  <section class="slide">
+    <h2>Linux and ChromeOS</h2>
+    <div class="columns">
+      <section>
+        <ul>
+          <li>Per thread EPP (Energy performance preference) </li>
+          <li>Task placement decisions </li>
+          <li>Preemption </li>
+          <li>Energy Aware Scheduler </li>
+          <li>Coming Soon 2024 </li>
+        </ul>
+      </section>
+      <section>
+        <h3>sched_setattr(2)</h3>
+        <ul>
+          <li>QOS_MEDIA</li>
+          <li>QOS_INTERACTIVE</li>
+          <li>QOS_DEFAULT</li>
+          <li>QOS_UTILITY</li>
+          <li>QOS_BACKGROUND</li>
+        </ul>
+      </section>
+    </div> 
+  </section>
+
+  <section class="comment">Right now there is an Enegry Aware scheduler in Linux kernel, but community is 
+    working on bringing a new Linux upstream scheduler for heterogeous architecture, sometime early next year.</section>
+
+  <section class="slide">
+    <h2>API</h2>
+    <img src="./worker_api.png">
+  </section>
+
+  
+
+  <section class="comment">
+    Of course there is other enum options to be added. Like "important" 
+    for above normal priority and their combinations.
+    The naming of enum values is also under discussion.
+  </section>
+
+  <section class="slide" id="numbered">
+    <h2>Example code</h2>
+    <h3>Make the worker run with efficiency</h3>
+    <pre>
+let worker = new Worker('worker.js', 
+  { qualityOfService: 'low' });</pre>
+    <h3>Make the worker run with performance</h3>
+    <pre>
+let worker = new Worker('worker.js', 
+  { qualityOfService: 'high' });</pre>
+  </section>
+
+  <section class="comment">
+    Behavior definition: 'low' means the worker may be run with
+    efficiency, 'high' means performance, 'important' means priority.
+    The final implementation is decided by browser and operating system.
+  </section>
+
+  <section class="slide">
+    <h2>Power and performance analysis (1/2)</h2>
+    <h3>Video conference with background blur</h3>
+    21% power saving, without losing FPS and delay
+    <style>
+      .bar-chart { font-size: 70%; margin: 1.1em 0; }
+      .bar { display: inline-block; vertical-align: sub; height: 16px; margin-right: 4px; }
+      .green { background-color: rgba(75, 192, 99, 0.8); }
+      .blue { background-color: rgba(73, 207, 225, 0.8); }
+    </style>
+    <h4 style="margin: .5em 0 -1.6em">Power</h4>
+    <table class="bar-chart">
+      <tr>
+        <td style="text-align: right;">Baseline</td>
+        <td><div class="bar blue" style="width: 300px;"></div>100%</td>
+      </tr>
+      <tr>
+        <td style="text-align: right;">qualityOfService: 'low'</td>
+        <td><div class="bar green" style="width: calc(300px * 0.79); "></div>79%</td>
+      </tr>
+    </table>
+    <h4 style="margin: .5em 0 -1.6em">FPS</h4>
+    <table class="bar-chart">
+      <tr>
+        <td style="text-align: right;">Baseline</td>
+        <td><div class="bar blue" style="width: 300px;"></div>100%</td>
+      </tr>
+      <tr>
+        <td style="text-align: right;">qualityOfService: 'low'</td>
+        <td><div class="bar green" style="width: 300px; "></div>100%</td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="comment">
+    In video conference we do video encode/decode/render in a 33ms period (30fps).
+    As long as we meet the 33ms deadline, the FPS would not be affected. So such
+    workload are allowed to be run slower to get more energy efficiency.
+    Efficient cores of modern generation Intel laptop processors can easily 
+    perform a common 720p decode render tasks at 30fps. By utilizing efficient 
+    core as much as possible via web worker quality of service API, we can 
+    extend the battery life in video conference. In case on a mobile device 
+    where there is fps dropping, application may detect this and switch the qos 
+    back to default or even high.
+  </section>
+
+  <section class="slide">
+    <h2>Power and performance analysis (2/2)</h2>
+    <h3>Squoosh.app webp image encoding</h3>
+    10% power saving, 2.7x execution time (37% FPS)
+    <h4 style="margin: .5em 0 -1.6em">Power</h4>
+    <table class="bar-chart">
+      <tr>
+        <td style="text-align: right;">Baseline</td>
+        <td><div class="bar blue" style="width: 300px;"></div>100%</td>
+      </tr>
+      <tr>
+        <td style="text-align: right;">qualityOfService: 'low'</td>
+        <td><div class="bar green" style="width: calc(300px * .9); "></div>90%</td>
+      </tr>
+    </table>
+    <h4 style="margin: .5em 0 -1.6em">FPS</h4>
+    <table class="bar-chart">
+      <tr>
+        <td style="text-align: right;">Baseline</td>
+        <td><div class="bar blue" style="width: 300px;"></div>100%</td>
+      </tr>
+      <tr>
+        <td style="text-align: right;">qualityOfService: 'low'</td>
+        <td><div class="bar green" style="width: calc(300px * .37); "></div>37%</td>
+      </tr>
+    </table>
+  </section>
+
+  <section class="comment">
+    When we want the procedure be background and not 
+    concerning its latency, like webp image encoding (if user is not doing 
+    nothing but waiting), we may also use the "low" option. Note the 10% power 
+    saving is at the cost of ~3x execution time. The saving is up to the 
+    processors' architecture and the machine code it executes. So it 
+    varies from workload to workload.
+  </section>
+
+  <section class="slide">
+    <h2>Try out our Chroimum PoC</h2>
+    <ol>
+      <li>Download Chromium patch (support Windows only for now)<br>
+        <a href="https://chromium-review.googlesource.com/c/chromium/src/+/4551463">
+          https://chromium-review.googlesource.com/c/chromium/src/+/4551463
+        </a>
+      </li>
+      <li>Compile and install
+        <a href="https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/windows_build_instructions.md">
+          Checking out and Building Chromium
+        </a>
+      </li>
+      <li>Add options in the worker constructor
+        <pre>
+let worker = new Worker('worker.js', 
+    { qualityOfService: 'low' });</pre>
+      </li>
+      <li>Run on the supported CPUs</li>
+    </ol>
+  </section>
+
+  <section class="comment">
+    See the path description for more implementation detail.
+    If you are not familiar with Chromium compiling, it may takes time.
+  </section>
+
+  <section class="slide">
+    <h2>Choice</h2>
+    <ul>
+      <li>Is the qualityOfService modifiable after construction?</li>
+      <li>Do we need a getter, setter, and an onchange event?</li>
+      <li>Other names for attribute or enum values?</li>
+      <li>Any permission issue if we allow user-defined thread priority?</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <h2>Considered Alternatives</h2>
+    <h3>Worklets</h3>
+    are for limited specific purpose(audio, CSS painting), controlled by browser
+    <h3>HTML Priority Hints</h3>
+    are for resource fetching priorities
+  </section>
+
+  <section class="slide">
+    <h2>Conclusion</h2>
+    <ul>
+      <li>
+        We propose a web worker quality of service, enabling js script run with 
+        performance / efficiency / priority, to achieve better runtime 
+        performance or power efficiency supported by modern processors.
+      </li>
+      <li>The API design and whether we should involve priority is still controversial.</li>
+      <li>Questions?</li>
+    </ul>
+  </section>
+ </body>
+</html>
