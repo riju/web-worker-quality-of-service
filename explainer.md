@@ -69,6 +69,26 @@ Tasks on web workers are usually time consuming and not sensitive to responsiven
 Some work may be responsible of providing the user with a real-time result, where a "high" quality of service hint would instruct the platform to provide the best performance and responsiveness. Such as:
 - Audio processing in real-time communication
 
+## Performance
+Here are some example showing "low" quality of service would really help improving the power efficiency while not affecting the overall performance.
+We implemented a demo on the Chromium project, using Windows's SetThreadInformation API to adjust PowerThrottling settings. Below are some test results based on Intel Core i7-1255U / 16GB RAM / Windows 11 21H2. Due to some reasons, only relative values are provided.
+
+### Background blur for online conference
+Zoom is a comprehensive communication platform offering high-quality video conferencing, online meetings, and group chat, with a background blur feature that enhances privacy and minimizes distractions. We use [Zoom web app](https://app.zoom.us/wc) to do 1:1 call with background blur enabled as our test workload. In this scenario, there are video recording, encoding, decoding, and data transmission happening on CPUs. And the background blur uses web worker.
+
+When we turn on the `qualityOfService: low`, we see the latency / jitter / packet loss / resolution(720p) / FPS still remains the same, which indicates the user experience is not affected. We also measured the power consumption between the options. As is shown in Figure 1, the `qualityOfService: low` provides >20% power saving to the video conferencing workload.
+
+![Figure 1. Power consumption of Zoom 1:1 online conference with background blur enabled](https://github.com/riju/web-worker-quality-of-service/assets/89496158/6d259ba3-b2e1-4f59-aaf0-402b33738792)
+
+### Physics engine
+For the WASM workload, we use ammo.js, which is a powerful physics engine originally written in C++, compiled to WebAssembly (WASM), enabling high-performance physics simulations for web applications.
+We use [ammo.js benchmark with WASM backend](https://github.com/kripken/ammo.js/blob/main/examples/webgl_demo/ammo.wasm.html), use the default number of boxes 500.
+
+When we turn on the `qualityOfService: low`, the stable FPS still remains at 60 FPS, and we have seen >10% power saving, as is shown in Figure 2.
+
+![Figure 2. Power consumption of ammo.js benchmark (WASM, 500boxes)](https://github.com/riju/web-worker-quality-of-service/assets/89496158/5716876c-8999-45da-aefc-b48eb80d186f)
+
+
 ## Detailed design discussion
 - Do we need to change the `qualityOfService` attribute while the task is ongoing?
   - Will there be a performance issue?
